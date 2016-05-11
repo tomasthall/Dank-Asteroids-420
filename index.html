@@ -1,0 +1,700 @@
+﻿<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>Asteroids</title>
+<style>
+body{
+margin:0;
+padding:0;
+overflow:hidden;
+}
+
+@font-face{
+	font-family: sexyFont;
+	src: url(Hyperspace.otf);
+}
+
+</style>
+<script type="text/javascript">
+
+</script>
+</head>
+<body>
+<canvas id="pageCanvas" style="display:block">
+You do not have a canvas enabled browser. Please, stop using IE :P
+</canvas>
+<script>
+// komentarze i zmienne będą po polsku i po angielsku, bo tak :v
+
+window.addEventListener('keydown',doKeyDown,true);
+window.addEventListener('keyup',doKeyUp,true);
+var canvas = document.querySelector('#pageCanvas');
+var context = canvas.getContext('2d');
+var angle = 0;
+var H = /*500;*/window.innerHeight; //*0.75,
+var	W = /*500;*/window.innerWidth; //*0.75;
+canvas.width = W;
+canvas.height = H;
+var xc = W/2; //zeby bylo w centrum :v
+var yc = H/2; //jw.
+var x =  xc;
+var y =  yc;
+var shipR = 20;
+var dv = 0.25;
+var dt = 1;
+var vx = 0;
+var vy = 0;
+var fps = 30;
+var maxVel = 10;
+var maxVelLeft = -10;
+var frict = 0.99;
+var brakes = 0.90;
+var keys = new Array();
+var fire = false;
+var points = 0;
+var lives = 3;
+var randomize = true;
+var asteroidArray = true;
+//zamiennik do setintervala
+var requestAnimationFrame = window.requestAnimationFrame || 
+					window.mozRequestAnimationFrame || 
+					window.webkitRequestAnimationFrame || 
+					window.msRequestAnimationFrame;
+var fps = 30;
+var now;
+var then = Date.now();
+var interval = 1000/fps;
+var delta;
+
+
+//laser
+var laserF = false;
+var lasery = [];
+var shootVel = 12;  //velocity of laser
+
+//asteroids
+var asteroidy = [];
+var asteroidy2 = [];
+
+
+//audio
+var laserAudio = new Audio("laser.wav");
+var fireAudio = new Audio("ogien.wav");
+var backgroundMusic = new Audio("04._Memory_Dealer.mp3");
+var shipKaboom = new Audio("ship.wav");
+var asteroidKaboom = new Audio("asteroid.wav");
+
+//var audio = new Audio('audio_file.mp3');
+//audio.play();
+
+var randomangle = Math.floor(Math.random()*3)+1;
+
+	var newasteroid1 ={
+			aid : 1,
+			ax : ((Math.round(Math.random()*W))%500),
+			ay : ((Math.round(Math.random()*H))%500),
+			avx : 1*(Math.random() > 0.5 ? -1 : 1),
+			avy : 1*(Math.random() > 0.5 ? -1 : 1),
+			ar : 30,
+			aangle : 3,
+			colour : "gray"
+		};
+		asteroidy.push(newasteroid1);
+
+	var newasteroid2 ={
+			aid : 2,
+			ax : ((Math.round(Math.random()*1000))%500),
+			ay : ((Math.round(Math.random()*1000))%500),
+			avx : 1*(Math.random() > 0.5 ? -1 : 1),
+			avy : 1*(Math.random() > 0.5 ? -1 : 1),
+			ar : 30,
+			aangle : 24,
+			colour : "gray"
+		};
+		asteroidy.push(newasteroid2);				
+		
+	var newasteroid3 ={
+			aid : 3,
+			ax : ((Math.round(Math.random()*1000))%500),
+			ay : ((Math.round(Math.random()*1000))%500),
+			avx : 1*(Math.random() > 0.5 ? -1 : 1),
+			avy : 1*(Math.random() > 0.5 ? -1 : 1),
+			ar : 30,
+			aangle : 122,
+			colour : "gray"
+		};
+		asteroidy.push(newasteroid3);
+		
+	var newasteroid4 ={
+			aid : 4,
+			ax : ((Math.round(Math.random()*1000))%500),
+			ay : ((Math.round(Math.random()*1000))%500),
+			avx : 1*(Math.random() > 0.5 ? -1 : 1),
+			avy : 1*(Math.random() > 0.5 ? -1 : 1),
+			ar : 30,
+			aangle : 52,
+			colour : "fuchsia"
+		};
+		asteroidy.push(newasteroid4);
+	
+	var newasteroid5 ={
+			aid : 5,
+			ax : ((Math.round(Math.random()*1000))%500),
+			ay : ((Math.round(Math.random()*1000))%500),
+			avx : 1*(Math.random() > 0.5 ? -1 : 1),
+			avy : 1*(Math.random() > 0.5 ? -1 : 1),
+			ar : 30,
+			aangle : 32,
+			colour : "gray"
+		};
+		asteroidy.push(newasteroid5);
+	var newasteroid6 ={
+			aid : 5,
+			ax : ((Math.round(Math.random()*1000))%500),
+			ay : ((Math.round(Math.random()*1000))%500),
+			avx : 1*(Math.random() > 0.5 ? -1 : 1),
+			avy : 1*(Math.random() > 0.5 ? -1 : 1),
+			ar : 30,
+			aangle : 32,
+			colour : "gray"
+		};
+		asteroidy.push(newasteroid6);
+		
+	var newasteroid7 ={
+			aid : 5,
+			ax : ((Math.round(Math.random()*1000))%500),
+			ay : ((Math.round(Math.random()*1000))%500),
+			avx : 1*(Math.random() > 0.5 ? -1 : 1),
+			avy : 1*(Math.random() > 0.5 ? -1 : 1),
+			ar : 30,
+			aangle : 32,
+			colour : "gray"
+		};
+		asteroidy.push(newasteroid7);
+	//var randomangle = Math.floor(Math.random()*3)+1;
+	
+
+
+
+function doKeyUp(evt){
+	keys[evt.keyCode] = false;
+	fire = false;
+	fireAudio.pause();
+	if (laserF) {
+		var	newlaser ={
+			lx: x,
+			ly: y,	
+			//lw : 4,
+			//lh : 4,
+			lr : 2,
+			lvx : Math.cos(convertToRadians(angle)),
+			lvy : Math.sin(convertToRadians(angle))
+			}
+		lasery.push(newlaser);
+		laserF = false;
+	}
+	
+}
+
+function doKeyDown(evt){
+	keys[evt.keyCode] = true;
+	
+	if(40 in keys && keys[40]){
+		if(randomize){
+		x = (Math.round(Math.random()*1000))%W;
+		y = (Math.round(Math.random()*1000))%H;
+		vx = 0;
+		vy = 0;
+		randomize = false;
+		setTimeout(function(){randomize = true;}, 2000);
+		}
+	}
+	
+	
+
+}
+
+function drawPoints(){
+		context.save();
+		context.setTransform(1,0,0,1,0,0);
+		context.beginPath();
+		context.font="30px sexyFont";
+		context.fillText("Score: " + points, 50, H*0.1);
+		context.fillStyle = "#FFFFFF";
+		context.fill();
+		context.closePath();
+		context.restore();
+	}
+	
+function drawLives(){
+		context.save();
+		context.setTransform(1,0,0,1,0,0);
+		context.beginPath();
+		context.font="30px sexyFont";
+		context.fillText(lives + " lives left", 500, H*0.1);
+		context.fillStyle = "#FFFFFF";
+		context.fill();
+		context.closePath();
+		context.restore();
+	}
+function drawCopyright(){
+		context.save();
+		context.setTransform(1,0,0,1,0,0);
+		context.beginPath();
+		context.textAlign = "center";
+		context.font="20px sexyFont";
+		context.fillText("©2015 Tomas Games", W/2, H*0.9);
+		context.fillStyle = "#FFFFFF";
+		context.fill();
+		context.closePath();
+		context.restore();
+	}
+function drawAsteroids(idx){
+	var asteroid = asteroidy[idx];
+	context.save();
+	context.setTransform(1,0,0,1,0,0);
+	context.rotate(0);
+	context.translate(asteroid.ax, asteroid.ay); //lmao
+	context.rotate(asteroid.aangle);
+	context.translate(-25,-25);
+	context.beginPath();
+	//context.fillText(asteroid.ax + " " + asteroid.ay, 0,50);
+	//context.arc(0, 0, asteroid.ar, 0, 2 * Math.PI, false);
+	//context.fillStyle = asteroid.colour;
+	context.fill();
+	context.closePath();
+	context.beginPath();
+	context.moveTo(0,0);
+	context.moveTo(20,15);
+	context.lineTo(0,30);
+	context.lineTo(-15,15);
+	context.lineTo(-27,14);
+	context.lineTo(-26,-13);
+	context.lineTo(-7,-25);
+	context.lineTo(7,-24);
+	context.lineTo(28,-5);
+	context.lineTo(5,-2);
+	context.lineTo(20,15);
+	context.lineWidth = 2;
+	context.strokeStyle = "#FFFFFF";
+	context.stroke();
+	context.restore();
+}
+
+function moveAsteroids(idx){
+	var asteroid = asteroidy[idx]
+	asteroid.ax += asteroid.avx;
+	asteroid.ay += asteroid.avy;
+	asteroid.aangle += 0.009;
+	if(asteroid.ax > W){
+		asteroid.ax = 0 -25;
+		}	
+	else{
+		if(asteroid.ax < -25){
+			asteroid.ax = W;
+		}
+	}
+	
+	if(asteroid.ay > H){
+		asteroid.ay = 0 -25;
+	}
+	else{
+		if(asteroid.ay < -25){
+			asteroid.ay = H;
+		}
+	}
+}
+/*
+function drawSmallAsteroids(idx){
+	var smallAsteroid = smallerAsteroids[idx];
+	context.save();
+	context.setTransform(1,0,0,1,0,0);
+	context.rotate(0);
+	context.translate(smallAsteroid.ax, smallAsteroid.ay); //lmao
+	context.rotate(smallAsteroid.aangle);
+	context.translate(-25,-25);
+	context.beginPath();
+	context.fillText(smallAsteroid.ax + " " + smallAsteroid, 0,50);
+
+
+}*/
+function drawLaser(idx) {
+	var laser = lasery[idx];
+	context.save();
+	context.translate(laser.lx,laser.ly);		
+	context.fillStyle = "red";
+	//context.fillText(laser.lx + " " + laser.ly,10,10);
+	//context.fillRect(0,0,laser.lw,laser.lh);
+	context.beginPath();
+	context.arc(0, 0, laser.lr, 0, 2 * Math.PI, false);
+	context.fillStyle = "red";
+	context.fill();
+	context.closePath();
+	
+	context.restore();
+}
+
+function moveLaser(idx) {
+	var laser = lasery[idx];
+	laser.lx += laser.lvx * shootVel;
+	laser.ly += laser.lvy * shootVel;
+	if (laser.lx > W || laser.lx < 0 || laser.ly > H || laser.ly < 0) {
+		lasery.splice(idx, 1);
+	}
+}
+
+
+
+//OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+function ogienZdupy(){
+		context.fillStyle = "red";
+		context.beginPath();
+		context.moveTo(-2,2);
+		context.lineTo(2,10);
+		context.lineTo(-2,18);
+		context.lineTo(-25,10);
+		context.lineTo(-2,2);
+		context.strokeStyle = "red";
+		context.stroke();
+	}
+
+function convertToRadians(degree) {
+	return degree*(Math.PI/180);
+}
+
+function incrementAngle() {
+	angle += 5;
+	if(angle > 360){
+		angle = 0;
+		}
+}
+
+function decrementAngle(){
+	angle -= 5;
+	if(angle > 360){
+		angle = 0;
+		}
+}
+function xyVelocity(){
+	vx += dv * Math.cos(convertToRadians(angle)); //* friction;
+	vy += dv * Math.sin(convertToRadians(angle)); //* friction;
+	if(vx > maxVel){
+		vx = maxVel;
+	}
+	if(vy < maxVelLeft){
+		vy = maxVelLeft;
+	}
+	
+	if(vx < maxVelLeft){
+		vx = maxVelLeft;
+	}
+	
+	if(vy > maxVel){
+		vy = maxVel;
+	}
+	
+}
+
+function shipMovement(){
+	
+	
+	if(66 in keys && keys[66]){ //it's B
+		vx = 0;
+		vy = 0;
+	}
+	
+	if(38 in keys && keys[38]){
+		xyVelocity();
+		fire = true;
+		fireAudio.play();
+	}
+	
+	if(37 in keys && keys[37]){
+		decrementAngle();
+	};
+	if (39 in keys && keys[39]){
+		incrementAngle();
+	};
+	if (32 in keys && keys[32]){
+		laserF = true;
+		laserAudio.play();
+	};
+	
+}
+
+function xyAndFriction(){
+	
+	x += vx * dt;
+	y += vy * dt;
+	
+	vx *= frict;
+	vy *= frict;
+	
+}
+
+function outOfBorders(){
+	
+	if(x > W){
+		x = x - W;
+		}
+	if(x< 0){
+		x = W;
+	}
+	
+	if(y > H){
+		y = y - H;
+	}
+	
+	if(y < 0){
+		y = H;
+	}
+}
+
+function blazeatron420(){  //the ship
+	context.beginPath();
+	context.moveTo(0,0);
+	context.lineTo(20,10);
+	context.lineTo(0,20);
+	context.lineTo(7,10);
+	context.lineTo(0,0);
+	context.arc(0, 10, shipR, 0, 0 * Math.PI, false);
+	context.strokeStyle = "white";
+	context.stroke();
+}
+
+function space(){
+	context.fillStyle = "black";
+	context.fillRect(0,0,W,H);
+}
+
+function superLaserCollider(){
+		for(var i in asteroidy){
+			var ax = asteroidy[i].ax,
+				ay = asteroidy[i].ay,
+				ar = asteroidy[i].ar;
+				
+				
+			for(var j in lasery){
+				var xl = lasery[j].lx,
+					yl = lasery[j].ly,
+					rl = lasery[j].lr;
+				
+				var dx = ax - xl;
+				var dy = ay - yl;
+				var distance = Math.sqrt(dx * dx + dy * dy); 
+				if(distance < ar + rl){
+					//
+					var smallestdistance = 2137022005,
+						idasterojdy;
+					for(u in asteroidy) {	
+						var ax1 = asteroidy[u].ax,
+							ay1 = asteroidy[u].ay,
+							ar1 = asteroidy[u].ar;
+						
+						var dx1 = ax1 - xl;
+						var dy1 = ay1 - yl;
+						var distance1 = Math.sqrt(dx1 * dx1 + dy1 * dy1); 
+						
+						if(distance1 < smallestdistance) {
+							smallestdistance = distance1;
+							idasterojdy = u;
+						}
+					}
+					console.log('hehe ' + idasterojdy);
+					asteroidy2.push(0,1);
+					console.log("male: " + asteroidy2.length);
+						for(w in asteroidy2){
+								console.log("meme");
+								var a2x = ax;
+								var a2y = ay;
+								var a2r = ar/2;
+								console.log("x: " + a2x + " y: " + a2y + " r: " + a2r);
+								context.beginPath();
+								context.moveTo(a2x,a2y);
+								context.moveTo(20,15);
+								context.lineTo(0,30);
+								context.lineTo(-15,15);
+								context.lineTo(-27,14);
+								context.lineTo(-26,-13);
+								context.lineTo(-7,-25);
+								context.lineTo(7,-24);
+								context.lineTo(28,-5);
+								context.lineTo(5,-2);
+								context.lineTo(20,15);
+								context.lineWidth = 2;
+								context.strokeStyle = "#FFFFFF";
+								context.stroke();
+								
+							}
+					console.log("kabom");
+					asteroidKaboom.play();
+					points = points + 100;
+					console.log(asteroidy.length);
+					asteroidy.splice(idasterojdy,1);
+					lasery.splice(0,1);
+					
+				}
+				
+			}
+		}
+	}
+	
+function superShipCollider(){
+	for(var i in asteroidy){
+			var ax = asteroidy[i].ax,
+				ay = asteroidy[i].ay,
+				ar = asteroidy[i].ar;
+			
+			var tx = ax - x;
+			var ty = ay - y;
+			var distance2 = Math.sqrt(tx * tx + ty * ty);
+			if(distance2 < ar + shipR){
+				var smallestdistance2 = 2137022005,
+						idasterojdy;
+					for(t in asteroidy) {	
+						var ax2 = asteroidy[t].ax,
+							ay2 = asteroidy[t].ay,
+							ar2 = asteroidy[t].ar;
+					
+						var tx2 = ax2 - x;
+						var ty2 = ay2 - y;
+						var distance22 = Math.sqrt(tx2 * tx2 + ty2 * ty2);
+						
+						if(distance22 < smallestdistance2) {
+							smallestdistance2 = distance22;
+							idasterojdy = t;
+						}
+					}
+					console.log("DEAD");
+					asteroidKaboom.play();
+					shipKaboom.play();
+					x = W/2;
+					y = H/2;
+					vx = 0;
+					vy = 0;
+					lives--;
+					asteroidy.splice(idasterojdy,1);
+					points = points + 100;
+					
+				}
+	}
+}	
+
+
+	
+function drawEverything() {  
+	shipMovement();
+	xyAndFriction();
+	outOfBorders();
+
+	//context.save();
+	//
+	
+	space();
+	context.save();
+	context.translate(x,y);
+	//context.translate(25,25);
+	context.rotate(convertToRadians(angle));
+	context.translate(-7,-10);
+	
+	if(fire){
+		ogienZdupy();
+	}
+	
+					
+	context.fillStyle = "green";
+	
+	if(asteroidy.length > 0 ){
+	for (var tmp in asteroidy){
+		drawAsteroids(tmp);
+		moveAsteroids(tmp);
+		
+		}
+	}
+	
+	blazeatron420();
+	//shootAsteroid(idx);
+	context.translate(-x+7,-y+10);
+	drawCopyright();
+	drawPoints();
+	if(lives == 0){
+		endingAudio = true;
+		context.save();
+		context.setTransform(1,0,0,1,0,0);
+		context.beginPath();
+		context.textAlign = "center";
+		context.font="100px sexyFont";
+		context.fillText("YOU LOSE", W/2, H*0.6);
+		context.fillStyle = "#FFFFFF";
+		context.fill();
+		context.closePath();
+		context.restore();
+		//
+		asteroidy.splice(0,7);
+		asteroidArray = false;
+		
+	}
+	
+	if(asteroidy.length == 0 && asteroidArray == true){
+		context.save();
+		context.setTransform(1,0,0,1,0,0);
+		context.beginPath();
+		context.textAlign = "center";
+		context.font="100px sexyFont";
+		context.fillText("YOU WIN", W/2, H*0.6);
+		context.fillStyle = "#FFFFFF";
+		context.fill();
+		context.closePath();
+		context.restore();
+		/*asteroidy.push(newasteroid4);
+		asteroidy.push(newasteroid2);
+		asteroidy.push(newasteroid3);
+		asteroidy.push(newasteroid4);*/
+		
+	}
+	drawLives();
+	context.restore();
+	console.log(asteroidy.length);
+	
+	
+
+	if(lasery.length > 0){
+
+		for (var tmp in lasery) {
+			
+			drawLaser(tmp);
+			moveLaser(tmp);
+		}			
+		
+		
+	}
+					
+	backgroundMusic.play();
+	superShipCollider();
+	superLaserCollider();
+	
+	
+}
+	
+
+//setInterval(drawEverything, 20);
+function draw(){
+	requestAnimationFrame(draw);
+	now = Date.now();
+	delta = now - then;
+	if (delta > interval){
+		then = now - (delta % interval);
+	}
+	
+	drawEverything();
+}
+
+draw();
+
+
+</script>
+</body>
+</html>
+
+<!--special thanks to Rudi, Jacek, sEver, Marek, Mateusz -->
